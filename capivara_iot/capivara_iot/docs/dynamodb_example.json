@@ -1,0 +1,45 @@
+{
+  "exemplo_item_dynamodb": {
+    "device_id": {
+      "S": "capivara-12345678"
+    },
+    "timestamp": {
+      "S": "2024-01-15T14:30:25.123456"
+    },
+    "temperature": {
+      "N": "27.5"
+    },
+    "created_at": {
+      "S": "2024-01-15T14:30:25.500000"
+    },
+    "ttl": {
+      "N": "1737034225"
+    }
+  },
+  "exemplo_query": {
+    "description": "Query para buscar dados de um device específico",
+    "query": {
+      "TableName": "CapivaraTemperaturas",
+      "KeyConditionExpression": "device_id = :device_id",
+      "ExpressionAttributeValues": {
+        ":device_id": {
+          "S": "capivara-12345678"
+        }
+      },
+      "ScanIndexForward": false,
+      "Limit": 10
+    }
+  },
+  "exemplo_scan": {
+    "description": "Scan para buscar temperaturas altas",
+    "scan": {
+      "TableName": "CapivaraTemperaturas",
+      "FilterExpression": "temperature > :temp",
+      "ExpressionAttributeValues": {
+        ":temp": {
+          "N": "30"
+        }
+      }
+    }
+  }
+}

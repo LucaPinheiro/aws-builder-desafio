@@ -1,0 +1,79 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Capivara IoT - Infraestrutura para coleta de dados de temperatura
+
+Globals:
+  Function:
+    Timeout: 30
+    Runtime: python3.9
+
+Resources:
+  # Tabela DynamoDB
+  CapivaraTemperaturasTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: CapivaraTemperaturas
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: device_id
+          AttributeType: S
+        - AttributeName: timestamp
+          AttributeType: S
+      KeySchema:
+        - AttributeName: device_id
+          KeyType: HASH
+        - AttributeName: timestamp
+          KeyType: RANGE
+      StreamSpecification:
+        StreamViewType: NEW_AND_OLD_IMAGES
+
+  # Função Lambda
+  TemperatureProcessorFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: capivara-temperature-processor
+      CodeUri: ../lambda/
+      Handler: lambda_function.lambda_handler
+      Environment:
+        Variables:
+          DYNAMODB_TABLE: !Ref CapivaraTemperaturasTable
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref CapivaraTemperaturasTable
+      Events:
+        TemperatureApi:
+          Type: Api
+          Properties:
+            Path: /temperature
+            Method: post
+            RestApiId: !Ref TemperatureApi
+
+  # API Gateway
+  TemperatureApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      Name: capivara-iot-api
+      StageName: prod
+      Cors:
+        AllowMethods: "'POST, OPTIONS'"
+        AllowHeaders: "'Content-Type'"
+        AllowOrigin: "'*'"
+
+Outputs:
+  ApiGatewayUrl:
+    Description: "URL do API Gateway"
+    Value: !Sub "https://${TemperatureApi}.execute-api.${AWS::Region}.amazonaws.com/prod/temperature"
+    Export:
+      Name: CapivaraIoTApiUrl
+
+  DynamoDBTableName:
+    Description: "Nome da tabela DynamoDB"
+    Value: !Ref CapivaraTemperaturasTable
+    Export:
+      Name: CapivaraIoTTableName
+
+  LambdaFunctionName:
+    Description: "Nome da função Lambda"
+    Value: !Ref TemperatureProcessorFunction
+    Export:
+      Name: CapivaraIoTLambdaFunction
